@@ -1,0 +1,47 @@
+name: Build Check
+
+on:
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.17.0
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Check Build Status
+        run: echo 'Checking build status'
+        continue-on-error: true
+
+      - name: Set Build Status
+        id: check_build
+        run: echo "::set-output name=build_status::${{ job.status }}"
+
+      - name: Report Build Status
+        run: |
+          if [[ "${{ steps.check_build.outputs.build_status }}" == "success" ]]; then
+            echo "Build successful."
+          else
+            echo "Build failed. Check the logs for details."
+            exit 1
+          fi
